@@ -2,6 +2,7 @@ import express from "express";
 import connectDB from "./src/config/db.js";
 import dotenv from "dotenv";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
 
 import authRoutes from "./src/routes/authRoutes.js";
 import symptomRoutes from "./src/routes/symptomRoutes.js";
@@ -14,6 +15,7 @@ import chatRoutes from "./src/routes/chatRoutes.js";
 import dietRoutes from "./src/routes/dietRoutes.js";
 import alertRoutes from "./src/routes/alertRoutes.js";
 import aiRoutes from "./src/routes/aiRoutes.js";
+import swaggerSpec from "./src/config/swagger.js";
 
 import "./src/scheduler/medReminderScheduler.js";
 import "./src/scheduler/routineAlertScheduler.js";
@@ -36,6 +38,12 @@ app.use(cors({
 
 app.get("/", (req, res) => {
   res.send("HealthSync Backend is Running!");
+});
+
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api/docs.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
 });
 
 app.use("/api/auth", authRoutes);
