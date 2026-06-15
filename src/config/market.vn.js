@@ -53,6 +53,7 @@ Hồ sơ: ${user.name}, ${user.age || "N/A"} tuổi, ${user.gender || "N/A"}, ${
 Bệnh nền: ${user.diseaseTags?.join(", ") || "Không"}
 Chế độ ăn: ${user.dietType || "Không"}
 Loại tài khoản: ${user.userType || "student"}${user.university ? `, Trường: ${user.university}` : ""}
+Phân loại lối sống sinh viên (Student Lifestyle Profile): ${user.lifestyleProfile || "Unknown"}
 
 Dữ liệu theo dõi hàng ngày:
 ${dataSummaryJson}

@@ -21,42 +21,19 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     required: true,
   },
-  age: {
-    type: Number,
-    required: true,
-  },
-  gender: {
-    type: String,
-    required: true,
-  },
-  height: {
-    type: Number,
-    required: true,
-  },
-  weight: {
-    type: Number,
-    required: true,
-  },
-  diseaseTags: {
-    type: [String],
-    default: []
-  },
-  dietType:{
-    type: String,
-    required: true
-  },
   userType: {
     type: String,
-    enum: ["student", "general"],
-    default: "student",
+    enum: ["student", "general", "admin"],
+    default: "general",
   },
-  university: {
-    type: String,
-    default: "",
+  isAdmin: {
+    type: Boolean,
+    default: false,
   },
-  major: {
+  subscriptionTier: {
     type: String,
-    default: "",
+    enum: ["free", "modern", "vip"],
+    default: "free",
   },
   profileImage: { 
     type: String 
@@ -68,13 +45,6 @@ const UserSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  },
-  aiContext: {
-    lastUpdated: Date,
-    healthSummary: String,
-    recommendations: [String],
-    concerns: [String],
-    trends: mongoose.Schema.Types.Mixed
   }
 
 }, { timestamps: true });

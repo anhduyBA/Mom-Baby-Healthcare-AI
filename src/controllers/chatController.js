@@ -27,13 +27,14 @@ export const sendMessage = async (req, res) => {
     const user = await User.findById(userId);
     
     let userContext = "";
-    if (user?.aiContext) {
+    if (user) {
       userContext = `
 **User Health Context (from recent monitoring):**
-- Health Summary: ${user.aiContext.healthSummary || 'N/A'}
-- Active Recommendations: ${user.aiContext.recommendations?.join('; ') || 'None'}
-- Health Concerns: ${user.aiContext.concerns?.join('; ') || 'None'}
-- Last Updated: ${user.aiContext.lastUpdated ? new Date(user.aiContext.lastUpdated).toLocaleDateString() : 'N/A'}
+- Student Lifestyle Profile: ${user.lifestyleProfile || 'Balanced'} (derived from comparison with student dataset)
+- Health Summary: ${user.aiContext?.healthSummary || 'N/A'}
+- Active Recommendations: ${user.aiContext?.recommendations?.join('; ') || 'None'}
+- Health Concerns: ${user.aiContext?.concerns?.join('; ') || 'None'}
+- Last Updated: ${user.aiContext?.lastUpdated ? new Date(user.aiContext.lastUpdated).toLocaleDateString() : 'N/A'}
 
 **User Profile:**
 - Age: ${user.age || 'N/A'}
@@ -45,12 +46,27 @@ export const sendMessage = async (req, res) => {
 `;
     }
 
-    const model = bioMistralClient.getGenerativeModel({ model: "gemini-2.5-flash" });
-
     const systemPrompt = PROMPTS.chatSystem(userContext, userMessage);
+    let text = "";
+    let modelName = "gemini-2.5-flash";
 
-    const result = await model.generateContent(systemPrompt);
-    const text = result.response.text();
+    try {
+      const model = bioMistralClient.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(systemPrompt);
+      text = result.response.text();
+    } catch (err) {
+      console.warn(`[Chat] Model ${modelName} failed. Error: ${err.message}. Trying gemini-2.0-flash...`);
+      try {
+        modelName = "gemini-2.0-flash";
+        const fallbackModel = bioMistralClient.getGenerativeModel({ model: modelName });
+        const result = await fallbackModel.generateContent(systemPrompt);
+        text = result.response.text();
+      } catch (err2) {
+        console.error("[Chat] All models failed.", err2);
+        throw err2;
+      }
+    }
+
     const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
     let aiData;
@@ -78,7 +94,10 @@ export const sendMessage = async (req, res) => {
     res.json({ reply: botReply });
   } catch (err) {
     console.error("Error in sendMessage:", err);
-    const fallbackReply = "I'm here to help, but I couldn't process your request right now. Please try again later.";
+    let fallbackReply = "I'm here to help, but I couldn't process your request right now. Please try again later.";
+    if (err.status === 429 || err.message?.includes("429") || err.message?.includes("quota") || err.message?.includes("Quota")) {
+      fallbackReply = "Hệ thống AI hiện tại đang quá tải hoặc đạt giới hạn lượt yêu cầu của gói miễn phí. Xin vui lòng thử lại sau ít phút.";
+    }
     let chat = await ChatHistory.findOne({ userId, sessionId });
     if (!chat) chat = new ChatHistory({ userId, sessionId, messages: [] });
     chat.messages.push({ sender: "user", text: userMessage }, { sender: "bot", text: fallbackReply });

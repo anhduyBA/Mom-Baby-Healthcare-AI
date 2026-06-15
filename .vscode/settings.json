@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./MomOi.NutritionAPI"
+    ],
+    "python.defaultInterpreterPath": "./venv/Scripts/python.exe"
+}

@@ -32,4 +32,17 @@ const upload = multer({
   },
 });
 
+export const uploadImage = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Chỉ chấp nhận PNG, JPG, WEBP, AVIF"), false);
+    }
+  }
+}).single("image");
+
 export default upload;

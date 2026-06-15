@@ -42,6 +42,40 @@ const DailyMonitoringSchema = new mongoose.Schema({
   symptoms: {
     severity: Number,
     note: String
+  },
+
+  // Maternal health metrics
+  steps: {
+    type: Number,
+    default: 0
+  },
+  babyIronInput: {
+    type: Number,
+    default: 0
+  },
+  babyFoodTexture: {
+    type: String,
+    default: ""
+  },
+  babyFishServings: {
+    type: Number,
+    default: 0
+  },
+  epdsScore: {
+    type: Number,
+    default: 0
+  },
+  conceptionDayOfCycle: {
+    type: Number,
+    default: 0
+  },
+  allergySymptomLogged: {
+    type: Boolean,
+    default: false
+  },
+  newFoodLogged: {
+    type: String,
+    default: ""
   }
 
 }, { timestamps: true });

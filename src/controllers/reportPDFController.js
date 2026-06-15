@@ -115,9 +115,16 @@ export const sendReportByEmail = async (req, res) => {
 
 const getFormattedUserData = async (userId, days) => {
   const User = (await import("../models/User.js")).default;
+  const UserHealthProfile = (await import("../models/UserHealthProfile.js")).default;
   const SymptomEntry = (await import("../models/SymptomEntry.js")).default;
 
-  const user = await User.findById(userId).select("-password");
+  const dbUser = await User.findById(userId).select("-password");
+  const healthProfile = await UserHealthProfile.findOne({ userId });
+
+  const user = {
+    ...(dbUser ? dbUser.toObject() : {}),
+    ...(healthProfile ? healthProfile.toObject() : {})
+  };
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const entriesRaw = await SymptomEntry.find({ userId, createdAt: { $gte: since } }).sort({ createdAt: -1 });

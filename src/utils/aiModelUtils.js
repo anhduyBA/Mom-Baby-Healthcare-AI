@@ -55,6 +55,7 @@ export const getUserChatContext = async (user) => {
     let contextString = `User Profile: ${user.name}, Age: ${user.age || 'N/A'}, Gender: ${user.gender || 'N/A'}`;
 
     if (user.userType) contextString += `\nLoại tài khoản: ${user.userType}`;
+    if (user.lifestyleProfile) contextString += `\nProfile Lối sống (Student Lifestyle Profile): ${user.lifestyleProfile}`;
     if (user.university) contextString += `\nTrường: ${user.university}`;
     if (user.diseaseTags?.length) contextString += `\nBệnh nền: ${user.diseaseTags.join(', ')}`;
     if (user.dietType) contextString += `\nChế độ ăn: ${user.dietType}`;

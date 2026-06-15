@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  momoi-api:        # ASP.NET Core 8 backend
+    build:
+      context: .
+      dockerfile: MomOi.API/Dockerfile
+    ports:
+      - "8000:80"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=MomOiDb;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;MultipleActiveResultSets=True;
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NutritionApiUrl=http://nutrition-api:8001
+      - RunMigrationsOnStartup=true
+      - EnableSwagger=true
+    depends_on:
+      - db
+
+  nutrition-api:    # Python FastAPI (USDA engine)
+    build:
+      context: .
+      dockerfile: MomOi.NutritionAPI/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - USDA_API_KEY=${USDA_API_KEY}
+      - DATABASE_URL=postgresql://postgres:postgres@pgdb:5432/nutrition_db
+    depends_on:
+      - pgdb
+
+  db:               # SQL Server
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1433:1433"
+    environment:
+      - SA_PASSWORD=YourStrongPassword123!
+      - ACCEPT_EULA=Y
+
+  pgdb:             # PostgreSQL database for the Python FastAPI service
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=nutrition_db
+
+  frontend:         # React app
+    build:
+      context: .
+      dockerfile: mom-oi-frontend/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - momoi-api

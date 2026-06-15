@@ -52,23 +52,28 @@ export const generatePersonalizedDietPlan = async (userId, data) => {
   try {
     const { monitoringData, healthAnalysis } = data;
     const User = (await import("../models/User.js")).default;
-    const user = await User.findById(userId);
-    if (!user) return;
+    const UserHealthProfile = (await import("../models/UserHealthProfile.js")).default;
+    
+    const dbUser = await User.findById(userId);
+    if (!dbUser) return;
+
+    const healthProfile = await UserHealthProfile.findOne({ userId });
+    const profileData = healthProfile || {};
 
     const bioMistralClient = new GoogleGenerativeAI(process.env.BIOMISTRAL_API_KEY);
     const model = bioMistralClient.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const context = `
-**User Profile:**
-- Name: ${user.name}
-- Age: ${user.age}
-- Gender: ${user.gender}
-- Height: ${user.height} cm
-- Weight: ${user.weight} kg
-- Disease Tags: ${user.diseaseTags?.join(', ') || 'None'}
-- Diet Type: ${user.dietType}
-- User Type: ${user.userType || "student"}
-- University: ${user.university || "N/A"}
+**User Profile (Anonymous):**
+- Age: ${profileData.age || 25}
+- Gender: ${profileData.gender || 'female'}
+- Height: ${profileData.height || 160} cm
+- Weight: ${profileData.weight || 50} kg
+- Disease Tags: ${profileData.diseaseTags?.join(', ') || 'None'}
+- Diet Type: ${profileData.dietType || 'regular'}
+- Pregnancy Stage: ${profileData.pregnancyStage || 'pre-natal'}
+- Pregnancy Week: ${profileData.pregnancyWeek || 0}
+- Baby Birth Date: ${profileData.babyBirthDate || 'N/A'}
 
 **Today's Health Data:**
 - Sleep: ${monitoringData.sleep?.hours || 0}h (quality: ${monitoringData.sleep?.quality || 0}/5)

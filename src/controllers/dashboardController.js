@@ -2,9 +2,14 @@ import SymptomEntry from "../models/SymptomEntry.js";
 import User from "../models/User.js";
 import MedSchedule from "../models/MedSchedule.js";
 import DietPlan from "../models/DietPlan.js";
+import DailyMonitoring from "../models/DailyMonitoring.js";
 
 const getRecentSymptoms = async (userId, limit = 10) => {
   return await SymptomEntry.find({ userId }).sort({ createdAt: -1 }).limit(limit);
+};
+
+const getRecentDailyMonitoring = async (userId, limit = 15) => {
+  return await DailyMonitoring.find({ userId }).sort({ date: -1 }).limit(limit);
 };
 
 const getActiveAlerts = async (userId) => {
@@ -103,7 +108,8 @@ const getBMI = (user) => {
 export const getUserDashboard = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId);
+    const UserHealthProfile = (await import("../models/UserHealthProfile.js")).default;
+    const user = await UserHealthProfile.findOne({ userId });
 
     const [
       recentSymptoms,
@@ -111,14 +117,16 @@ export const getUserDashboard = async (req, res) => {
       medicationSchedule,
       dietPlan,
       weeklySeverity,
-      alertCount
+      alertCount,
+      recentDailyMonitoring
     ] = await Promise.all([
       getRecentSymptoms(userId),
       getActiveAlerts(userId),
       getMedicationSchedule(userId),
       getDietPlan(userId),
       getWeeklySeverity(userId),
-      getUnacknowledgedAlertCount(userId)
+      getUnacknowledgedAlertCount(userId),
+      getRecentDailyMonitoring(userId)
     ]);
 
     const severityMetrics = getSeverityMetrics(recentSymptoms);
@@ -126,6 +134,7 @@ export const getUserDashboard = async (req, res) => {
 
     res.json({
       recentSymptoms,
+      recentDailyMonitoring,
       alerts,
       medicationSchedule,
       dietPlan,

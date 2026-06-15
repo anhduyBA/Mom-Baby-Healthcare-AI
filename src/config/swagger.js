@@ -36,6 +36,7 @@ const options = {
       { name: "Diet" },
       { name: "Alerts" },
       { name: "AI" },
+      { name: "Recipes" },
     ],
     paths: {
       "/": {
@@ -167,6 +168,42 @@ const options = {
           parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
           responses: { 200: { description: "OK" } },
         },
+      },
+      "/api/symptoms/analyze": {
+        post: {
+          tags: ["Symptoms"],
+          summary: "Analyze symptom using AI (Gemini Vision)",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "multipart/form-data": {
+                schema: {
+                  type: "object",
+                  required: ["textDescription"],
+                  properties: {
+                    textDescription: { type: "string", description: "Text description of symptoms", minLength: 10, maxLength: 1000 },
+                    image: { type: "string", format: "binary", description: "Optional image of the symptoms (max 10MB)" }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: "Symptom analyzed successfully" },
+            400: { description: "Bad request/Validation Error" },
+            429: { description: "Rate limit exceeded" }
+          }
+        }
+      },
+      "/api/symptoms/history": {
+        get: {
+          tags: ["Symptoms"],
+          summary: "Get AI symptom analysis history",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "limit", in: "query", schema: { type: "integer", default: 10 } }],
+          responses: { 200: { description: "OK" } }
+        }
       },
       "/api/dashboard": {
         get: {
@@ -391,6 +428,80 @@ const options = {
           security: [{ bearerAuth: [] }],
           responses: { 200: { description: "OK" } },
         },
+      },
+      "/api/recipes/generate": {
+        post: {
+          tags: ["Recipes"],
+          summary: "Generate AI recipes based on current lifestyle profile",
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    dietType: { type: "string", description: "Dietary style choice" },
+                    allergies: { type: "string", description: "Allergies info", maxLength: 200 },
+                    maxCookTime: { type: "number", description: "Max prep time in minutes (10-120)", minimum: 10, maximum: 120 },
+                    availableIngredients: { type: "string", description: "Pantry ingredients available" }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            200: { description: "Recipes generated successfully" },
+            400: { description: "Validation error / Missing lifestyle history" },
+            429: { description: "Regeneration cooldown active" }
+          }
+        }
+      },
+      "/api/recipes/my": {
+        get: {
+          tags: ["Recipes"],
+          summary: "Get user's generated recipes (cached/saved)",
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: "page", in: "query", schema: { type: "integer", default: 1 } },
+            { name: "limit", in: "query", schema: { type: "integer", default: 10 } },
+            { name: "profileId", in: "query", schema: { type: "string" } },
+            { name: "difficulty", in: "query", schema: { type: "string", enum: ["Dễ", "Trung bình", "Khó"] } },
+            { name: "isSaved", in: "query", schema: { type: "string", enum: ["true", "false"] } }
+          ],
+          responses: { 200: { description: "OK" } }
+        }
+      },
+      "/api/recipes/{recipeId}": {
+        get: {
+          tags: ["Recipes"],
+          summary: "Get recipe details by ID",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "recipeId", in: "path", required: true, schema: { type: "string" } }],
+          responses: {
+            200: { description: "OK" },
+            404: { description: "Recipe not found" }
+          }
+        }
+      },
+      "/api/recipes/{recipeId}/save": {
+        patch: {
+          tags: ["Recipes"],
+          summary: "Toggle recipe bookmark/saved state",
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: "recipeId", in: "path", required: true, schema: { type: "string" } }],
+          responses: { 200: { description: "OK" } }
+        }
+      },
+      "/api/recipes/profiles/current": {
+        get: {
+          tags: ["Recipes"],
+          summary: "Get current student lifestyle nutrition profile details",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: { description: "OK" },
+            404: { description: "Lifestyle data not recorded yet" }
+          }
+        }
       },
     },
   },

@@ -33,21 +33,29 @@ export const getUserReportData = async (req, res) => {
     const user = await User.findById(userId).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    const UserHealthProfile = (await import("../models/UserHealthProfile.js")).default;
+    const healthProfile = await UserHealthProfile.findOne({ userId });
+
     const entries = await getSymptomEntries(userId, 30);
     const summary = getSummaryStats(entries);
     const alerts = await getAlerts(userId);
 
+    const mergedUser = {
+      ...user.toObject(),
+      ...(healthProfile ? healthProfile.toObject() : {})
+    };
+
     res.json({
       user: {
-        name: user.name,
-        email: user.email,
-        age: user.age,
-        gender: user.gender,
-        height: user.height,
-        weight: user.weight,
-        bmi: getBMI(user),
-        diseaseTags: user.diseaseTags,
-        dietType: user.dietType
+        name: mergedUser.name,
+        email: mergedUser.email,
+        age: mergedUser.age,
+        gender: mergedUser.gender,
+        height: mergedUser.height,
+        weight: mergedUser.weight,
+        bmi: getBMI(mergedUser),
+        diseaseTags: mergedUser.diseaseTags,
+        dietType: mergedUser.dietType
       },
       summary: {
         avgSeverity30: summary.avgSeverity30,
