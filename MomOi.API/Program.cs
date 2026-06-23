@@ -28,6 +28,40 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Server=db,1433;Database=MomOiDb;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;MultipleActiveResultSets=True;";
 
+// Helper to convert postgresql:// URI format to Npgsql connection string format
+string ConvertPostgresUriToConnectionString(string uriString)
+{
+    if (string.IsNullOrEmpty(uriString) || (!uriString.StartsWith("postgres://") && !uriString.StartsWith("postgresql://")))
+    {
+        return uriString;
+    }
+    try
+    {
+        var withoutProtocol = uriString.StartsWith("postgresql://") ? uriString.Substring(13) : uriString.Substring(11);
+        var atIndex = withoutProtocol.IndexOf('@');
+        if (atIndex == -1) return uriString;
+        var userInfo = withoutProtocol.Substring(0, atIndex).Split(':');
+        var username = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        var hostAndRest = withoutProtocol.Substring(atIndex + 1);
+        var slashIndex = hostAndRest.IndexOf('/');
+        if (slashIndex == -1) return uriString;
+        var hostPort = hostAndRest.Substring(0, slashIndex).Split(':');
+        var host = hostPort[0];
+        var port = hostPort.Length > 1 ? hostPort[1] : "5432";
+        var databaseAndQuery = hostAndRest.Substring(slashIndex + 1);
+        var questionIndex = databaseAndQuery.IndexOf('?');
+        var database = questionIndex == -1 ? databaseAndQuery : databaseAndQuery.Substring(0, questionIndex);
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;MultipleActiveResultSets=true;";
+    }
+    catch
+    {
+        return uriString;
+    }
+}
+
+connectionString = ConvertPostgresUriToConnectionString(connectionString);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     if (connectionString.Contains("Host=") || connectionString.Contains("Port=") || connectionString.Contains("SslMode="))
