@@ -74,7 +74,21 @@ connectDB();
 app.use("/uploads", express.static("uploads"));
 
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      "https://healthsync-care.vercel.app",
+      "https://mom-baby-healthcare-ai-fe-q4o9.vercel.app"
+    ];
+    if (allowed.includes(origin) || origin.endsWith(".vercel.app") || origin.startsWith("http://localhost:")) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 
