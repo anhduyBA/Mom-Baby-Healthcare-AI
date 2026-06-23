@@ -52,7 +52,7 @@ string ConvertPostgresUriToConnectionString(string uriString)
         var databaseAndQuery = hostAndRest.Substring(slashIndex + 1);
         var questionIndex = databaseAndQuery.IndexOf('?');
         var database = questionIndex == -1 ? databaseAndQuery : databaseAndQuery.Substring(0, questionIndex);
-        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;MultipleActiveResultSets=true;";
+        return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
     }
     catch
     {
