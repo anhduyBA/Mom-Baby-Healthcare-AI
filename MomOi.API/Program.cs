@@ -27,9 +27,22 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. DATABASE CONFIGURATION (Entity Framework Core)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Server=db,1433;Database=MomOiDb;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=True;MultipleActiveResultSets=True;";
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString, sqlOptions => 
-        sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null)));
+{
+    if (connectionString.Contains("Host=") || connectionString.Contains("Port=") || connectionString.Contains("SslMode="))
+    {
+        // Use PostgreSQL for production (Render/Koyeb)
+        options.UseNpgsql(connectionString, npgsqlOptions => 
+            npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null));
+    }
+    else
+    {
+        // Use SQL Server for local development
+        options.UseSqlServer(connectionString, sqlOptions => 
+            sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null));
+    }
+});
 
 // 2. IDENTITY SYSTEM CONFIGURATION
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
@@ -205,19 +218,28 @@ app.MapHub<AlertHub>("/hubs/alerts");
 // Map API Controllers
 app.MapControllers();
 
-// Automatically execute DB migration on startup (facilitates Docker staging environment)
+// Automatically execute DB migration / schema creation on startup
 if (builder.Configuration["RunMigrationsOnStartup"] == "true")
 {
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        dbContext.Database.Migrate();
-        Console.WriteLine("Database migrations applied successfully.");
+        if (dbContext.Database.IsNpgsql() || dbContext.Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL")
+        {
+            // PostgreSQL schema creation (bypasses SQL Server specific migrations)
+            dbContext.Database.EnsureCreated();
+            Console.WriteLine("PostgreSQL database schema verified/created successfully.");
+        }
+        else
+        {
+            dbContext.Database.Migrate();
+            Console.WriteLine("SQL Server database migrations applied successfully.");
+        }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error applying migrations on startup: {ex.Message}");
+        Console.WriteLine($"Error initializing database on startup: {ex.Message}");
     }
 }
 

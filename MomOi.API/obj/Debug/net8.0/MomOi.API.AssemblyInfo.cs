@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MomOi.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+81127626f0c2861109a78a3ecb7f40aaf05801a9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dfd537186d133cd34d171bce954745f6240ceb12")]
 [assembly: System.Reflection.AssemblyProductAttribute("MomOi.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MomOi.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

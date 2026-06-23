@@ -32,6 +32,7 @@ namespace MomOi.API.Models.Health
         /// <summary>
         /// Navigation property to AppUser.
         /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
         public AppUser User { get; set; } = null!;
 
         /// <summary>

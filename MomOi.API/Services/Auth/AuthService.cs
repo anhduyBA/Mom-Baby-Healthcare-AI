@@ -166,6 +166,28 @@ namespace MomOi.API.Services.Auth
             }
         }
 
+        public async Task<AuthResponseDto> CreateAuthResponseForUserAsync(AppUser user)
+        {
+            var token = GenerateJwtToken(user);
+            var refreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(30);
+            await _userManager.UpdateAsync(user);
+
+            return new AuthResponseDto
+            {
+                Token = token,
+                RefreshToken = refreshToken,
+                User = new UserResponseDto
+                {
+                    Id = user.Id,
+                    Email = user.Email!,
+                    Tier = user.Tier
+                }
+            };
+        }
+
         private string GenerateJwtToken(AppUser user)
         {
             var claims = new[]

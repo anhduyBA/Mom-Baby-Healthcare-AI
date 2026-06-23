@@ -99,6 +99,138 @@ async function uploadToStorage(buffer, mimeType, userId) {
 }
 
 /**
+ * Local rule-based symptom analysis engine when Gemini API is unavailable or rate-limited.
+ */
+function getLocalSymptomFallback(textDescription, profile) {
+  const desc = textDescription.toLowerCase();
+  
+  const isAllergy = desc.includes("dị ứng") || desc.includes("di ung") || 
+                    desc.includes("ngứa") || desc.includes("ngua") || 
+                    desc.includes("phát ban") || desc.includes("phat ban") || 
+                    desc.includes("nổi mẩn") || desc.includes("noi man") || 
+                    desc.includes("mề đay") || desc.includes("me day") || 
+                    desc.includes("mụn") || desc.includes("mun");
+
+  const isAbdominalPain = desc.includes("đau bụng") || desc.includes("dau bung") || 
+                          desc.includes("co thắt") || desc.includes("co that") || 
+                          desc.includes("đau hông") || desc.includes("dau hong") || 
+                          desc.includes("cramping");
+
+  const isBleeding = desc.includes("máu") || desc.includes("mau") || 
+                     desc.includes("chảy máu") || desc.includes("chay mau") || 
+                     desc.includes("ra dịch hồng") || desc.includes("ra dich hong") || 
+                     desc.includes("bleeding");
+
+  if (isAllergy) {
+    return {
+      possibleConditions: [
+        {
+          name: "Phát ban thai kỳ / Dị ứng thực phẩm",
+          probability: "Có thể",
+          description: "Phản ứng kích ứng da thường gặp khi tiếp xúc dị nguyên (như gluten trong bánh mì, phấn hoa, mỹ phẩm) hoặc do thay đổi nội tiết tố thai kỳ (PUPPP)."
+        }
+      ],
+      lifestyleConnection: "Có liên quan đến việc tiêu thụ thực phẩm mới hoặc thay đổi nội tiết tố đột ngột trong thai kỳ của bạn.",
+      urgencyLevel: "Trung bình",
+      urgencyReason: "Triệu chứng gây ngứa ngáy, khó chịu nhưng không đe dọa tính mạng ngay lập tức nếu không đi kèm khó thở.",
+      recommendations: [
+        "Ngưng sử dụng thực phẩm hoặc sản phẩm nghi ngờ gây dị ứng ngay lập tức.",
+        "Tránh cào gãi vết ngứa để ngăn ngừa trầy xước và nhiễm trùng cơ hội.",
+        "Chườm mát hoặc sử dụng các loại sữa tắm dịu nhẹ dành riêng cho phụ nữ mang thai."
+      ],
+      dietarySuggestions: [
+        "Uống nhiều nước ấm để hỗ trợ cơ thể đào thải dị nguyên.",
+        "Tránh các món ăn dễ gây dị ứng khác như hải sản, các loại hạt, đồ ăn quá cay nóng.",
+        "Bổ sung thực phẩm thanh mát và giàu Vitamin C để tăng cường đề kháng tự nhiên."
+      ],
+      disclaimer: "Kết quả phân tích này mang tính chất tham khảo sơ bộ từ công cụ chẩn đoán cục bộ.",
+      shouldSeeDoctor: true,
+      specialistType: "Bác sĩ Da liễu / Sản phụ khoa"
+    };
+  }
+
+  if (isAbdominalPain) {
+    return {
+      possibleConditions: [
+        {
+          name: "Căng dây chằng tròn / Co thắt tử cung sinh lý",
+          probability: "Cần kiểm tra",
+          description: "Sự phát triển của thai nhi làm căng cơ tử cung, hoặc dấu hiệu co thắt nhẹ do vận động quá sức."
+        }
+      ],
+      lifestyleConnection: "Có thể do hoạt động đi lại nhiều, làm việc nặng hoặc uống không đủ nước trong ngày.",
+      urgencyLevel: "Trung bình",
+      urgencyReason: "Đau bụng lâm râm nhẹ là bình thường, nhưng nếu đau thắt dữ dội hoặc đi kèm chảy máu thì cực kỳ nguy hiểm.",
+      recommendations: [
+        "Nằm nghỉ ngơi nghiêng sang bên trái trong không gian thoáng mát.",
+        "Uống một ly nước ấm và hít thở sâu, nhẹ nhàng.",
+        "Theo dõi tần suất và mức độ của các cơn đau."
+      ],
+      dietarySuggestions: [
+        "Tránh các thực phẩm gây đầy hơi, khó tiêu như đồ chiên rán, đồ uống có ga.",
+        "Bổ sung các món ăn lỏng, ấm, dễ tiêu hóa như cháo, súp củ quả."
+      ],
+      disclaimer: "Kết quả phân tích này mang tính chất tham khảo sơ bộ từ công cụ chẩn đoán cục bộ.",
+      shouldSeeDoctor: true,
+      specialistType: "Bác sĩ Sản phụ khoa"
+    };
+  }
+
+  if (isBleeding) {
+    return {
+      possibleConditions: [
+        {
+          name: "Chảy máu âm đạo bất thường thai kỳ",
+          probability: "Có thể",
+          description: "Có thể do xuất huyết bám tổ, thay đổi nội tiết tố hoặc các tình trạng cần được chăm sóc y tế khẩn cấp."
+        }
+      ],
+      lifestyleConnection: "Đòi hỏi hạn chế tối đa vận động mạnh và tránh căng thẳng tâm lý.",
+      urgencyLevel: "Khẩn cấp",
+      urgencyReason: "Ra máu âm đạo trong thai kỳ luôn là một dấu hiệu cảnh báo cần được kiểm tra y tế ngay lập tức.",
+      recommendations: [
+        "Nằm yên tại giường, hạn chế di chuyển tối đa.",
+        "Dùng băng vệ sinh để theo dõi lượng và màu sắc máu chảy ra.",
+        "Đến ngay cơ sở y tế phụ sản gần nhất để kiểm tra tim thai và tử cung."
+      ],
+      dietarySuggestions: [
+        "Tránh ăn uống các thực phẩm lạnh hoặc có tính hàn.",
+        "Uống nước ấm và nghỉ ngơi hoàn toàn."
+      ],
+      disclaimer: "Kết quả phân tích này mang tính chất tham khảo sơ bộ từ công cụ chẩn đoán cục bộ.",
+      shouldSeeDoctor: true,
+      specialistType: "Bác sĩ Sản phụ khoa cấp cứu"
+    };
+  }
+
+  // Default fallback for general symptoms
+  return {
+    possibleConditions: [
+      {
+        name: "Rối loạn sinh lý thai kỳ thông thường / Thay đổi nội tiết tố",
+        probability: "Cần kiểm tra",
+        description: "Các thay đổi sinh lý tự nhiên khi mang thai gây ra các biểu hiện mệt mỏi, uể oải hoặc khó chịu nhẹ."
+      }
+    ],
+    lifestyleConnection: "Liên quan đến nhịp sinh hoạt, chất lượng giấc ngủ và chế độ dinh dưỡng hàng ngày của mẹ.",
+    urgencyLevel: "Thấp",
+    urgencyReason: "Triệu chứng nhẹ, phổ biến ở phụ nữ mang thai và không đi kèm dấu hiệu nguy hiểm cấp tính.",
+    recommendations: [
+      "Dành thời gian nghỉ ngơi nhiều hơn, ngủ đủ giấc từ 7-8 tiếng mỗi ngày.",
+      "Uống đủ 2-2.5 lít nước mỗi ngày để hỗ trợ tuần hoàn.",
+      "Thực hiện các bài tập yoga bầu hoặc đi bộ nhẹ nhàng."
+    ],
+    dietarySuggestions: [
+      "Ăn chín uống sôi hoàn toàn.",
+      "Bổ sung đa dạng các nhóm chất dinh dưỡng và vitamin khoáng chất thai kỳ."
+    ],
+    disclaimer: "Kết quả phân tích này mang tính chất tham khảo sơ bộ từ công cụ chẩn đoán cục bộ.",
+    shouldSeeDoctor: false,
+    specialistType: "Bác sĩ Chăm sóc sức khỏe ban đầu"
+  };
+}
+
+/**
  * Analyzes symptom description and optional image, mapping to student profile.
  * 
  * @param {string} userId - User Mongoose ID.
@@ -149,7 +281,7 @@ export async function analyzeSymptom(userId, lifestyleData, textDescription, ima
     result = await model.generateContent({ contents: [{ role: "user", parts }] });
     rawText = result.response.text();
   } catch (err) {
-    console.warn(`[AI] Model ${modelName} failed with image. Error: ${err.message}.`);
+    console.warn(`[AI] Model ${modelName} failed. Error: ${err.message}.`);
     if (imageBuffer) {
       console.log("[AI] Attempting text-only fallback with gemini-2.5-flash...");
       try {
@@ -158,11 +290,16 @@ export async function analyzeSymptom(userId, lifestyleData, textDescription, ima
         result = await apiInstances.textModel.generateContent({ contents: [{ role: "user", parts: textOnlyParts }] });
         rawText = result.response.text();
       } catch (err2) {
-        console.error("[AI] Text-only fallback also failed. Error:", err2.message);
-        throw new Error(`Phân tích triệu chứng thất bại: ${err2.message}`);
+        console.warn("[AI] Text-only fallback also failed. Using local rule-based fallback...");
+        const fallbackData = getLocalSymptomFallback(textDescription, profile);
+        rawText = JSON.stringify(fallbackData);
+        modelName = "Local Rule Engine";
       }
     } else {
-      throw new Error(`Phân tích triệu chứng thất bại: ${err.message}`);
+      console.warn("[AI] Symptom analysis failed. Using local rule-based fallback...");
+      const fallbackData = getLocalSymptomFallback(textDescription, profile);
+      rawText = JSON.stringify(fallbackData);
+      modelName = "Local Rule Engine";
     }
   }
 

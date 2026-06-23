@@ -8,6 +8,7 @@ using MomOi.API.DTOs;
 using MomOi.API.DTOs.Auth;
 using MomOi.API.Models.Health;
 using MomOi.API.Models.Identity;
+using MomOi.API.Services.Auth;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -24,11 +25,13 @@ namespace MomOi.API.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IAuthService _authService;
 
-        public UserProfileController(AppDbContext context, UserManager<AppUser> userManager)
+        public UserProfileController(AppDbContext context, UserManager<AppUser> userManager, IAuthService authService)
         {
             _context = context;
             _userManager = userManager;
+            _authService = authService;
         }
 
         /// <summary>
@@ -65,7 +68,7 @@ namespace MomOi.API.Controllers
         /// </summary>
         [HttpPut]
         [ProducesResponseType(typeof(ApiResponse<MomHealthProfile>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateProfile([FromBody] MomHealthProfile updateDto)
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateMomProfileDto updateDto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -100,7 +103,7 @@ namespace MomOi.API.Controllers
         /// Simulated endpoint to upgrade a user's subscription tier.
         /// </summary>
         [HttpPost("upgrade")]
-        [ProducesResponseType(typeof(ApiResponse<UserResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpgradeSubscription([FromQuery] SubscriptionTier tier)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -113,14 +116,9 @@ namespace MomOi.API.Controllers
             user.TierExpiresAt = DateTime.UtcNow.AddMonths(1); // 1 month subscription
             await _userManager.UpdateAsync(user);
 
-            var response = new UserResponseDto
-            {
-                Id = user.Id,
-                Email = user.Email!,
-                Tier = user.Tier
-            };
+            var authResponse = await _authService.CreateAuthResponseForUserAsync(user);
 
-            return Ok(ApiResponse<UserResponseDto>.SuccessResult(response, $"Nâng cấp thành công lên gói {tier}."));
+            return Ok(ApiResponse<AuthResponseDto>.SuccessResult(authResponse, $"Nâng cấp thành công lên gói {tier}."));
         }
     }
 }

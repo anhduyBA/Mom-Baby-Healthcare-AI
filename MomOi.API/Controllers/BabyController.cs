@@ -36,16 +36,36 @@ namespace MomOi.API.Controllers
         /// </summary>
         [HttpPost("profile")]
         [ProducesResponseType(typeof(ApiResponse<BabyProfile>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateBabyProfile([FromBody] BabyProfile profile)
+        public async Task<IActionResult> CreateBabyProfile([FromBody] CreateBabyProfileDto dto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
-            profile.UserId = userId;
-            _context.BabyProfiles.Add(profile);
+            var baby = new BabyProfile
+            {
+                UserId = userId,
+                BabyName = dto.Name,
+                DateOfBirth = dto.BirthDate,
+                Gender = dto.Gender == 0 ? "male" : "female",
+                CurrentWeightKg = dto.CurrentWeightKg,
+                CurrentHeightCm = dto.CurrentHeightCm
+            };
+
+            _context.BabyProfiles.Add(baby);
             await _context.SaveChangesAsync();
 
-            return Ok(ApiResponse<BabyProfile>.SuccessResult(profile, "Tạo hồ sơ cho bé thành công."));
+            // Save starting birth weight/height growth record
+            var record = new GrowthRecord
+            {
+                BabyProfileId = baby.Id,
+                RecordedAt = dto.BirthDate,
+                WeightKg = dto.BirthWeightKg,
+                HeightCm = dto.BirthHeightCm
+            };
+            _context.GrowthRecords.Add(record);
+            await _context.SaveChangesAsync();
+
+            return Ok(ApiResponse<BabyProfile>.SuccessResult(baby, "Tạo hồ sơ cho bé thành công."));
         }
 
         /// <summary>
@@ -71,7 +91,7 @@ namespace MomOi.API.Controllers
         [HttpPost("{id}/growth")]
         [ProducesResponseType(typeof(ApiResponse<GrowthEvaluationResult>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> LogGrowth(int id, [FromBody] GrowthRecord record)
+        public async Task<IActionResult> LogGrowth(int id, [FromBody] LogGrowthDto dto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -85,15 +105,19 @@ namespace MomOi.API.Controllers
             }
 
             // Save growth checkpoint
-            record.BabyProfileId = baby.Id;
-            record.BabyProfile = null!; // Avoid loop
-            record.RecordedAt = DateTime.UtcNow;
+            var record = new GrowthRecord
+            {
+                BabyProfileId = baby.Id,
+                RecordedAt = DateTime.UtcNow,
+                WeightKg = dto.WeightKg,
+                HeightCm = dto.HeightCm
+            };
 
             _context.GrowthRecords.Add(record);
 
             // Dynamically update baby profile values
-            baby.CurrentWeightKg = record.WeightKg;
-            baby.CurrentHeightCm = record.HeightCm;
+            baby.CurrentWeightKg = dto.WeightKg;
+            baby.CurrentHeightCm = dto.HeightCm;
 
             await _context.SaveChangesAsync();
 
@@ -102,8 +126,8 @@ namespace MomOi.API.Controllers
             var evaluation = _businessRuleEngine.VerifyBabyGrowth(
                 ageInMonths, 
                 baby.Gender, 
-                record.WeightKg, 
-                record.HeightCm
+                dto.WeightKg, 
+                dto.HeightCm
             );
 
             return Ok(ApiResponse<GrowthEvaluationResult>.SuccessResult(evaluation, "Ghi nhận chỉ số tăng trưởng và đánh giá thành công."));

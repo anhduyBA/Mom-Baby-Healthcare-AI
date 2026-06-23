@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace MomOi.API.Services.Auth
@@ -14,7 +15,7 @@ namespace MomOi.API.Services.Auth
         private static readonly object _lock = new object();
 
         /// <summary>
-        /// Gets the developer RSA key pair generated in-memory.
+        /// Gets the developer RSA key pair generated in-memory or persisted in a temp file.
         /// </summary>
         public static RSA GetDeveloperKey()
         {
@@ -24,7 +25,36 @@ namespace MomOi.API.Services.Auth
                 {
                     if (_developerKey == null)
                     {
-                        _developerKey = RSA.Create(2048);
+                        var keyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_dev_key.pem");
+                        _developerKey = RSA.Create();
+
+                        if (File.Exists(keyPath))
+                        {
+                            try
+                            {
+                                var pem = File.ReadAllText(keyPath);
+                                _developerKey.ImportFromPem(pem);
+                            }
+                            catch
+                            {
+                                _developerKey.Dispose();
+                                _developerKey = RSA.Create(2048);
+                                try
+                                {
+                                    File.WriteAllText(keyPath, _developerKey.ExportPkcs8PrivateKeyPem());
+                                }
+                                catch { }
+                            }
+                        }
+                        else
+                        {
+                            _developerKey = RSA.Create(2048);
+                            try
+                            {
+                                File.WriteAllText(keyPath, _developerKey.ExportPkcs8PrivateKeyPem());
+                            }
+                            catch { }
+                        }
                     }
                 }
             }

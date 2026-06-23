@@ -20,6 +20,7 @@ namespace MomOi.API.Models.Health
         /// <summary>
         /// Navigation property to MomHealthProfile.
         /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
         public MomHealthProfile Profile { get; set; } = null!;
 
         /// <summary>

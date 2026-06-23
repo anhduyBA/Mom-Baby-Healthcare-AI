@@ -156,3 +156,5 @@ D:\Term 7\EXE101\LifeBalance_AI_BE\MomOi.API\obj\Debug\net8.0\refint\MomOi.API.d
 D:\Term 7\EXE101\LifeBalance_AI_BE\MomOi.API\obj\Debug\net8.0\MomOi.API.pdb
 D:\Term 7\EXE101\LifeBalance_AI_BE\MomOi.API\obj\Debug\net8.0\MomOi.API.genruntimeconfig.cache
 D:\Term 7\EXE101\LifeBalance_AI_BE\MomOi.API\obj\Debug\net8.0\ref\MomOi.API.dll
+D:\Term 7\EXE101\LifeBalance_AI_BE\MomOi.API\bin\Debug\net8.0\Npgsql.dll
+D:\Term 7\EXE101\LifeBalance_AI_BE\MomOi.API\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll

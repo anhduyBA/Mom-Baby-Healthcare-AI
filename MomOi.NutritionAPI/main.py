@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from typing import List, Optional
+from dotenv import load_dotenv
+
+# Load environment variables from parent folder .env
+load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
 
 from database import engine, SessionLocal, Base, get_db
 from models.ingredient import Ingredient
@@ -18,6 +22,7 @@ from schemas import (
 from services.usda_service import fetch_usda_nutrients, bulk_ingest_ingredients
 from services.who_nutrition_goals import get_daily_goals
 from services.recommendation_engine import recommend_daily_menu, recommend_weekly_menu, to_recipe_response
+from services.pregnancy_nutrition_service import get_ai_pregnancy_meal_plan
 
 app = FastAPI(
     title="Mom Ơi! Nutrition API",
@@ -188,6 +193,15 @@ async def get_baby_nutrition_goals(baby_id: int, db: Session = Depends(get_db)):
         iron_mg=baby.daily_iron_goal,
         fat_g=get_daily_goals(baby.age_months, baby.current_weight_kg).fat_g
     )
+
+@app.get("/api/nutrition/meal-plan")
+async def get_pregnancy_meal_plan_endpoint(week: int = Query(12)):
+    """
+    Get a 7-day maternal meal plan for the given pregnancy week.
+    Generates plan using Google Gemini AI, or returns a high-quality local fallback plan.
+    """
+    plan = await get_ai_pregnancy_meal_plan(week)
+    return plan
 
 
 # --- Recipe Endpoints ---

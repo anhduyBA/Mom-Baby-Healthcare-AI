@@ -1,4 +1,5 @@
 using MomOi.API.DTOs.Auth;
+using MomOi.API.Models.Identity;
 using System.Threading.Tasks;
 
 namespace MomOi.API.Services.Auth
@@ -27,5 +28,10 @@ namespace MomOi.API.Services.Auth
         /// Revokes the user's active refresh token, logging them out.
         /// </summary>
         Task LogoutAsync(string userId);
+
+        /// <summary>
+        /// Generates access and refresh tokens and returns a consolidated AuthResponseDto.
+        /// </summary>
+        Task<AuthResponseDto> CreateAuthResponseForUserAsync(AppUser user);
     }
 }
