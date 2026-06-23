@@ -22,6 +22,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.RateLimiting;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. DATABASE CONFIGURATION (Entity Framework Core)
